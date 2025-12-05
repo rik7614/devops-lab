@@ -4,9 +4,8 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main',
-                    credentialsId: 'github-credentials',
-                    url: 'https://github.com/rik7614/devops-lab.git'
+                echo 'Source already checked out by Jenkins SCM.'
+                sh 'ls -la'
             }
         }
 
