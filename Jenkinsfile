@@ -1,12 +1,6 @@
 pipeline {
     agent any
 
-    // 👇 This makes Jenkins automatically check GitHub every minute
-    triggers {
-        // Poll SCM roughly every 1 minute
-        pollSCM('H/1 * * * *')
-    }
-
     stages {
         stage('Checkout') {
             steps {
