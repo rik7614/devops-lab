@@ -1,13 +1,9 @@
 pipeline {
     agent any
 
-    // Jenkins will poll GitHub every minute
+    // Jenkins will poll Git every minute and trigger when it sees a new commit
     triggers {
         pollSCM('* * * * *')
-    }
-
-    environment {
-        DOCKER_IMAGE = 'rik7614/devops-lab'
     }
 
     stages {
@@ -18,52 +14,23 @@ pipeline {
             }
         }
 
-        stage('Build & Push Docker Image') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'docker-hub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh """
-                        echo "Logging into Docker Hub..."
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-
-                        echo "Building image: ${DOCKER_IMAGE}:${BUILD_NUMBER}"
-                        docker build -t ${DOCKER_IMAGE}:${BUILD_NUMBER} .
-
-                        echo "Tagging as latest..."
-                        docker tag ${DOCKER_IMAGE}:${BUILD_NUMBER} ${DOCKER_IMAGE}:latest
-
-                        echo "Pushing image tags..."
-                        docker push ${DOCKER_IMAGE}:${BUILD_NUMBER}
-                        docker push ${DOCKER_IMAGE}:latest
-
-                        docker logout
-                    """
-                }
-            }
-        }
-
         stage('Deploy to Kubernetes') {
             steps {
-                sh """
-                echo "Applying Kubernetes manifests (in case resources don't exist)..."
+                sh '''
+                set -e
+
+                echo "Applying Kubernetes manifests..."
                 kubectl apply -f k8s/deployment.yaml
                 kubectl apply -f k8s/service.yaml
 
-                echo "Updating Deployment to use image tag: ${BUILD_NUMBER}"
-                kubectl set image deployment/devops-lab devops-lab=${DOCKER_IMAGE}:${BUILD_NUMBER} --record
-
-                echo "Waiting for rollout to finish..."
-                kubectl rollout status deployment/devops-lab
-
+                echo
                 echo "Pods:"
-                kubectl get pods -l app=devops-lab
+                kubectl get pods -l app=devops-lab -o wide || true
 
+                echo
                 echo "Services:"
                 kubectl get svc
-                """
+                '''
             }
         }
     }
