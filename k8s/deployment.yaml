@@ -16,6 +16,7 @@ spec:
     spec:
       containers:
         - name: devops-lab
-          image: rik7614/devops-lab:5.0
+          image: rik7614/devops-lab:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 5000
