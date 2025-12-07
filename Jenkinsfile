@@ -1,6 +1,12 @@
 pipeline {
     agent any
 
+    // Single source of truth for the trigger
+    triggers {
+        // poll git every minute
+        pollSCM('* * * * *')
+    }
+
     stages {
         stage('Checkout') {
             steps {
